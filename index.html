@@ -37,6 +37,8 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Header */
@@ -55,6 +57,7 @@
             display: flex;
             border-bottom: 1px solid var(--border);
             background: #f1f5f9;
+            flex-wrap: wrap; /* Allow wrapping on very small screens */
         }
 
         .nav-btn {
@@ -67,6 +70,8 @@
             color: var(--secondary);
             transition: all 0.2s;
             border-bottom: 3px solid transparent;
+            min-width: 140px; /* Ensure click target is decent */
+            white-space: nowrap;
         }
 
         .nav-btn:hover {
@@ -171,6 +176,7 @@
             font-size: 1.5rem;
             font-weight: 700;
             color: var(--primary-dark);
+            word-break: break-all; /* Prevent overflow of long numbers */
         }
 
         .formula-note {
@@ -180,17 +186,26 @@
             font-style: italic;
         }
 
+        /* Calibration Layout */
+        .calib-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 25px;
+        }
+
         /* Data Table */
         .data-table-container {
             border: 1px solid var(--border);
             border-radius: 8px;
-            overflow: hidden;
+            overflow-x: auto; /* Allow scrolling on small screens */
             margin-bottom: 15px;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 250px; /* Ensure table doesn't collapse too much */
         }
 
         th {
@@ -201,6 +216,7 @@
             letter-spacing: 0.05em;
             color: var(--secondary);
             text-align: left;
+            white-space: nowrap;
         }
 
         td {
@@ -213,12 +229,13 @@
             padding: 6px;
             border: 1px solid var(--border);
             border-radius: 4px;
+            min-width: 60px; /* Prevent inputs from vanishing */
         }
 
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
@@ -232,13 +249,14 @@
         }
 
         .stat-label { font-size: 0.8rem; color: var(--secondary); text-transform: uppercase; }
-        .stat-val { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-top: 5px; }
+        .stat-val { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-top: 5px; word-break: break-word; }
         .stat-val.highlight { color: var(--primary); }
 
         .chart-wrapper {
             margin-top: 25px;
             height: 300px;
             position: relative;
+            width: 100%;
         }
         
         /* Tip Box */
@@ -256,6 +274,7 @@
             cursor: pointer;
             font-weight: 600;
             list-style: none;
+            user-select: none;
         }
         details > summary::-webkit-details-marker {
             display: none;
@@ -275,9 +294,32 @@
             margin-top: 4px;
         }
 
-        @media (max-width: 600px) {
-            .nav-btn { font-size: 0.9rem; padding: 10px; }
-            .input-grid { grid-template-columns: 1fr; }
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .calib-layout {
+                grid-template-columns: 1fr; /* Stack vertically on mobile */
+                gap: 30px;
+            }
+
+            .tab-content {
+                padding: 15px;
+            }
+
+            .nav-btn {
+                padding: 12px 8px;
+                font-size: 0.9rem;
+            }
+            
+            h1 { font-size: 1.3rem; }
+            
+            /* Ensure charts don't break width */
+            .chart-wrapper {
+                height: 250px;
+            }
         }
     </style>
 </head>
@@ -298,7 +340,7 @@
     <div id="prep" class="tab-content active">
         <div class="input-grid">
             <div class="form-group">
-                <label>Target Concentration (mg/L or ppm)</label>
+                <label>Target Conc. (mg/L)</label>
                 <input type="number" id="conc" placeholder="e.g. 1000">
             </div>
             <div class="form-group">
@@ -306,26 +348,26 @@
                 <input type="number" id="vol" placeholder="e.g. 100">
             </div>
             <div class="form-group">
-                <label>Source Chemical Purity (%)</label>
+                <label>Source Purity (%)</label>
                 <input type="number" id="purity" value="100" placeholder="e.g. 99.5">
             </div>
         </div>
 
         <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
             <div style="margin-bottom:15px; font-weight:600; color:var(--primary-dark); display:flex; justify-content:space-between; align-items:center;">
-                <span>Atomic/Molecular Weight Correction</span>
+                <span>Atomic/MW Correction</span>
                 <span style="font-size:0.8rem; color:var(--secondary); font-weight:normal;">Optional</span>
             </div>
             
             <div class="tip-box">
                 <details>
-                    <summary>💡 How to use "Ions per Formula Unit"? (Click to expand)</summary>
+                    <summary>💡 "Ions per Formula Unit"?</summary>
                     <div style="margin-top: 10px; line-height: 1.6;">
                         <p style="margin:5px 0;">This factor adjusts for the stoichiometry when your source chemical contains multiple atoms of the target ion.</p>
                         <ul style="padding-left: 20px; margin: 5px 0;">
-                            <li><strong>Example 1:</strong> Preparing Cl⁻ standard using NaCl.<br>Value = <strong>1</strong> (1 Cl in NaCl)</li>
-                            <li><strong>Example 2:</strong> Preparing Cl⁻ standard using CaCl₂.<br>Value = <strong>2</strong> (2 Cl in CaCl₂)</li>
-                            <li><strong>Example 3:</strong> Preparing Na⁺ standard using Na₂SO₄.<br>Value = <strong>2</strong> (2 Na in Na₂SO₄)</li>
+                            <li><strong>Ex 1:</strong> Cl⁻ from NaCl.<br>Value = <strong>1</strong> (1 Cl in NaCl)</li>
+                            <li><strong>Ex 2:</strong> Cl⁻ from CaCl₂.<br>Value = <strong>2</strong> (2 Cl in CaCl₂)</li>
+                            <li><strong>Ex 3:</strong> Na⁺ from Na₂SO₄.<br>Value = <strong>2</strong> (2 Na in Na₂SO₄)</li>
                         </ul>
                     </div>
                 </details>
@@ -333,7 +375,7 @@
             
             <div class="input-grid" style="margin-bottom: 0;">
                 <div class="form-group">
-                    <label>Source Chemical Formula</label>
+                    <label>Source Chem Formula</label>
                     <input type="text" id="sourceFormula" placeholder="e.g. CaCl2" onblur="handleFormulaInput('source')">
                     <div class="helper-text">Auto-calculates MW</div>
                 </div>
@@ -345,7 +387,7 @@
             
             <div class="input-grid" style="margin-bottom: 0; margin-top: 15px;">
                 <div class="form-group">
-                    <label>Target Species Formula</label>
+                    <label>Target Formula</label>
                     <input type="text" id="targetFormula" placeholder="e.g. Cl" onblur="handleFormulaInput('target')">
                     <div class="helper-text">Auto-sets Stoichiometry</div>
                 </div>
@@ -354,7 +396,7 @@
                     <input type="number" id="targetMW" placeholder="e.g. 35.45">
                 </div>
                 <div class="form-group">
-                    <label>Ions per Formula Unit</label>
+                    <label>Ions per Formula</label>
                     <input type="number" id="stoich" value="1" placeholder="e.g. 2">
                     <div class="helper-text">Check tip above</div>
                 </div>
@@ -377,9 +419,10 @@
 
     <!-- TAB 2: Calibration -->
     <div id="calib" class="tab-content">
-        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 25px;">
+        <!-- Replaced inline grid with class -->
+        <div class="calib-layout">
             
-            <!-- Left: Data Entry -->
+            <!-- Section 1: Data Entry -->
             <div>
                 <h3 style="margin-top:0;">Data Points</h3>
                 <div class="data-table-container">
@@ -397,12 +440,12 @@
                     </table>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-sm btn-add" onclick="addRow()">+ Add Point</button>
+                    <button class="btn btn-sm btn-add" onclick="addRow()">+ Point</button>
                     <button class="btn btn-sm btn-primary" style="flex:1;" onclick="processCalibration()">Calculate</button>
                 </div>
             </div>
 
-            <!-- Right: Results -->
+            <!-- Section 2: Results -->
             <div>
                 <h3 style="margin-top:0;">Statistics</h3>
                 <div class="stats-grid">
@@ -419,7 +462,7 @@
                         <div class="stat-val" id="r2">-</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Residual SD (σ)</div>
+                        <div class="stat-label">Res. SD (σ)</div>
                         <div class="stat-val" id="syx">-</div>
                     </div>
                     <div class="stat-card" style="border-color: var(--primary);">
