@@ -52,7 +52,7 @@
         header h1 { margin: 0; font-size: 1.5rem; }
         header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9rem; }
 
-        /* Report Controls (New) */
+        /* Report Controls */
         .report-controls {
             display: flex;
             gap: 15px;
@@ -143,7 +143,7 @@
             font-size: 0.9rem;
         }
 
-        .form-group input {
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border);
@@ -151,9 +151,15 @@
             font-size: 1rem;
             box-sizing: border-box;
             transition: border-color 0.2s;
+            font-family: inherit;
         }
 
-        .form-group input:focus {
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
@@ -217,6 +223,27 @@
             display: grid;
             grid-template-columns: 1fr 1.2fr;
             gap: 25px;
+        }
+        
+        /* Validation Layout */
+        .validation-section {
+            padding-bottom: 30px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+        .validation-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--secondary);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         /* Data Table */
@@ -350,16 +377,17 @@
 
             /* Ensure content visibility */
             .tab-content.active { padding: 0; animation: none; }
-            .input-grid, .calib-layout { display: block; }
+            .input-grid, .calib-layout, .validation-section { display: block; }
             .input-grid { margin-bottom: 15px; }
             
             /* Make inputs look like text */
-            input { 
+            input, textarea { 
                 border: none !important; 
                 background: none !important; 
                 padding: 0 !important; 
                 font-weight: bold;
                 color: black !important;
+                resize: none;
             }
             label { color: #666; font-size: 0.8rem; }
             
@@ -386,7 +414,7 @@
         <p>Standard Preparation & Method Validation</p>
     </header>
 
-    <!-- New Report Controls -->
+    <!-- Report Controls -->
     <div class="report-controls">
         <div class="meta-inputs">
             <input type="text" id="analystName" placeholder="Analyst Name">
@@ -398,6 +426,7 @@
     <div class="nav-tabs">
         <button class="nav-btn active" onclick="switchTab('prep')">Solution Prep</button>
         <button class="nav-btn" onclick="switchTab('calib')">Calibration & LOD/LOQ</button>
+        <button class="nav-btn" onclick="switchTab('valid')">Validation (RSD & Rec)</button>
     </div>
 
     <!-- TAB 1: Solution Preparation -->
@@ -483,7 +512,6 @@
 
     <!-- TAB 2: Calibration -->
     <div id="calib" class="tab-content">
-        <!-- Replaced inline grid with class -->
         <div class="calib-layout">
             
             <!-- Section 1: Data Entry -->
@@ -550,11 +578,82 @@
             σ is the Standard Error of the Y-Estimate (Residual Standard Deviation).
         </div>
     </div>
+    
+    <!-- TAB 3: Validation (New) -->
+    <div id="valid" class="tab-content">
+        
+        <!-- Precision Section -->
+        <div class="validation-section">
+            <h3 class="section-title">Precision (Repeatability / Interday)</h3>
+            <p style="margin-top: -10px; margin-bottom: 15px; font-size: 0.9rem; color: var(--secondary);">Paste a list of measured values (e.g. from Excel) to calculate RSD.</p>
+            
+            <div class="input-grid">
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Data Values (one per line)</label>
+                    <textarea id="rsdData" placeholder="10.2&#10;10.1&#10;10.3&#10;..."></textarea>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="calculateRSD()">Calculate Precision Stats</button>
+            
+            <div class="stats-grid" style="margin-top: 15px;">
+                <div class="stat-card">
+                    <div class="stat-label">Count (n)</div>
+                    <div class="stat-val" id="rsd-n">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mean</div>
+                    <div class="stat-val" id="rsd-mean">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Std Dev (SD)</div>
+                    <div class="stat-val" id="rsd-sd">-</div>
+                </div>
+                <div class="stat-card" style="border-color: var(--primary);">
+                    <div class="stat-label">% RSD</div>
+                    <div class="stat-val highlight" id="rsd-val">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recovery Section -->
+        <div class="validation-section">
+            <h3 class="section-title">Recovery Study</h3>
+            
+            <div class="input-grid">
+                <div class="form-group">
+                    <label>Unspiked Conc. (C<sub>unspiked</sub>)</label>
+                    <input type="number" id="concUnspiked" placeholder="e.g. 10.5">
+                </div>
+                <div class="form-group">
+                    <label>Spiked Conc. (C<sub>spiked</sub>)</label>
+                    <input type="number" id="concSpiked" placeholder="e.g. 20.8">
+                </div>
+                <div class="form-group">
+                    <label>Added Conc. (C<sub>added</sub>)</label>
+                    <input type="number" id="concAdded" placeholder="e.g. 10.0">
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="calculateRecovery()">Calculate % Recovery</button>
+            
+            <div id="rec-results" class="result-panel" style="display: none; padding: 15px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.9rem; color: var(--secondary);">Recovery</div>
+                    <div class="result-value" id="rec-display">-%</div>
+                </div>
+                <div class="formula-note">
+                    Formula: (C<sub>spiked</sub> - C<sub>unspiked</sub>) / C<sub>added</sub> × 100
+                </div>
+            </div>
+        </div>
+        
+    </div>
 
 </div>
 
 <script>
-    // --- PRINT LOGIC (NEW) ---
+    // --- PRINT LOGIC ---
     function printReport() {
         const analyst = document.getElementById('analystName').value || "Not specified";
         const loc = document.getElementById('locationName').value;
@@ -708,12 +807,20 @@
     }
 
     function switchTab(tabId) {
+        // Hide all contents
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        // Deactivate all buttons
         document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        
+        // Show target content
         document.getElementById(tabId).classList.add('active');
+        
+        // Activate target button
+        // Find index: 0=prep, 1=calib, 2=valid
         const btns = document.querySelectorAll('.nav-btn');
         if(tabId === 'prep') btns[0].classList.add('active');
-        else btns[1].classList.add('active');
+        else if(tabId === 'calib') btns[1].classList.add('active');
+        else if(tabId === 'valid') btns[2].classList.add('active');
     }
 
     // --- SOLUTION PREP LOGIC ---
@@ -834,6 +941,56 @@
                 plugins: { legend: { position: 'bottom' } }
             }
         });
+    }
+    
+    // --- VALIDATION (RSD & RECOVERY) LOGIC ---
+    function calculateRSD() {
+        const raw = document.getElementById('rsdData').value;
+        // Split by newlines, commas, or spaces
+        const values = raw.split(/[\n, ]+/).filter(v => v.trim() !== "").map(Number).filter(n => !isNaN(n));
+        
+        if (values.length < 2) {
+            alert("Please enter at least 2 values to calculate RSD.");
+            return;
+        }
+        
+        const n = values.length;
+        const mean = values.reduce((a, b) => a + b, 0) / n;
+        
+        // Calculate Standard Deviation (Sample)
+        const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n - 1);
+        const sd = Math.sqrt(variance);
+        
+        const rsd = (sd / mean) * 100;
+        
+        document.getElementById('rsd-n').textContent = n;
+        document.getElementById('rsd-mean').textContent = mean.toFixed(4);
+        document.getElementById('rsd-sd').textContent = sd.toFixed(4);
+        document.getElementById('rsd-val').textContent = rsd.toFixed(2) + "%";
+    }
+    
+    function calculateRecovery() {
+        const unspiked = parseFloat(document.getElementById('concUnspiked').value);
+        const spiked = parseFloat(document.getElementById('concSpiked').value);
+        const added = parseFloat(document.getElementById('concAdded').value);
+        
+        if (isNaN(unspiked) || isNaN(spiked) || isNaN(added) || added === 0) {
+            alert("Please enter valid numbers. 'Added Conc' cannot be zero.");
+            return;
+        }
+        
+        const recovery = ((spiked - unspiked) / added) * 100;
+        
+        document.getElementById('rec-results').style.display = 'block';
+        document.getElementById('rec-display').textContent = recovery.toFixed(2) + "%";
+        
+        const disp = document.getElementById('rec-display');
+        // Visual feedback for reasonable recovery range (80-120%)
+        if (recovery >= 80 && recovery <= 120) {
+            disp.style.color = 'var(--success)';
+        } else {
+            disp.style.color = 'var(--danger)';
+        }
     }
 </script>
 </body>
